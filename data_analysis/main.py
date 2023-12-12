@@ -1,58 +1,50 @@
-import psycopg2
+
 import os
 import time
 
 import pandas as pd
-import requests
-
 from colorama import init, Fore
-from io import StringIO
+
 from config import db_config
+
+from municipality import Municipality
+from world import World
+
 
 # init colorama
 init()
 os.system("cls")
+# pd.set_option('display.max_rows', None)
+# pd.set_option('display.max_columns', None)
 
-def get_municipality_file_path():
-    while True:
-        file_path = input(f"{Fore.YELLOW}Ruta del Archivo de Fallecidos por Municipio (csv): {Fore.RESET}")
+def pause():
+    print('Presiona una tecla para continuar...')
+    input()
 
-        if not file_path.lower().endswith('.csv'):
-            print(f"{Fore.RED}El archivo debe tener extensión .csv, intentalo de nuevo{Fore.RESET}")
-            continue
-
-        if os.path.isfile(file_path):
-            return file_path
-        else:
-            print(f"{Fore.RED}El archivo no existe (o no es válido), intentalo de nuevo{Fore.RESET}")
-
-def get_world_file():
-    url = input("Enlace del Archivo de Fallecidos a Nivel Mundial (csv): ")
-
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        csv_data = StringIO(response.text)
-
-        dataframe = pd.read_csv(csv_data)
-
-        return dataframe
-    else:
-        print(f"{Fore.RED}Hubo un error al descargar el archivo de la url {url} - {response.status_code}{Fore.RESET}")
-        return None
+municipality = Municipality()
+world = World()
 
 # Read Municipality Data
-by_municipality_csv = get_municipality_file_path()
+by_municipality_csv = municipality.get_municipality_file_path()
 municipality_data = pd.read_csv(by_municipality_csv)
 os.system("cls")
 
 print(f"{Fore.LIGHTGREEN_EX}El archivo {by_municipality_csv} fue seleccionado con éxito{Fore.RESET}")
 
 # Download 
-world_data = get_world_file()
+world_data = world.get_world_file()
 if world_data is not None:
     print(f"{Fore.LIGHTGREEN_EX}La data se ha leído con éxito{Fore.RESET}")
     time.sleep(2)
     os.system("cls")
 
+    print(f"{Fore.YELLOW}Limpiando Data de Municipios{Fore.RESET}")
+    municipality_data = municipality.clear_municipality_data(municipality_data)
+    print(municipality_data)
+    pause()
+
+    print(f"{Fore.YELLOW}Limpiando Data de Municipios{Fore.RESET}")
+    world_data = world.clear_world_data(world_data)
+    print(world_data)
+    pause()
     
