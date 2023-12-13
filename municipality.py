@@ -4,6 +4,15 @@ from colorama import init, Fore
 from io import StringIO
 init()
 
+def is_positive_integer(value):
+    try:
+        return pd.notna(value) and int(value) > 0
+    except ValueError:
+        return False
+
+def standarize_data(dataframe):
+    numeric_columns = dataframe.columns[dataframe.columns.get_loc('poblacion'):]
+
 class Municipality:
     def get_municipality_file_path(self):
         while True:

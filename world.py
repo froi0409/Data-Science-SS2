@@ -22,13 +22,13 @@ def standarize_data(dataframe):
     dataframe['Date_reported'] = dataframe['Date_reported'].str.strip().str.replace('[-. ]', '/', regex=True)
     
     # validate dates
-    valid_dates = pd.to_datetime(dataframe['Date_reported'], errors='coerce', format='%m/%d/%Y', exact=False)
     valid_formats = pd.to_datetime(dataframe['Date_reported'], errors='coerce', format='%m/%d/%Y', exact=False).notna()
     dataframe = dataframe[valid_formats]
 
     # standarize numeric data
     numeric_columns = ['New_cases', 'Cumulative_cases', 'New_deaths', 'Cumulative_deaths']
 
+    dataframe[numeric_columns] = dataframe[numeric_columns].fillna(0).replace('N/A', 0)
     # Filter rows where at least one numeric column is not a positive integer
     condition = dataframe[numeric_columns].applymap(is_positive_integer).all(axis=1)
     dataframe = dataframe[condition]
