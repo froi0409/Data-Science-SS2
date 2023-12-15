@@ -1,4 +1,5 @@
 import pyodbc
+import json
 
 # Configura los detalles de conexión
 server = 'FROI-PC\SQLEXPRESS'
@@ -18,16 +19,28 @@ def get_database_connection():
         return None
     
 def execute_queries(db_conn, queries):
+    commit_cont = 0
+    rollback_cont = 0
     for q in queries:
-        execute_query(db_conn, q)
+        if execute_query(db_conn, q):
+            commit_cont += 1
+        else:
+            rollback_cont += 1
+    report = {
+        'commit_cont': commit_cont,
+        'rollback_cont': rollback_cont
+    }
+    return report
 
 def execute_query(db_conn, query):
     try:
         cursor = db_conn.cursor()
         cursor.execute(query)
         db_conn.commit()
+        return True
     except Exception as e:
         print(f"Ocurrió un error al insertar: {str(e)}")
         db_conn.rollback()
-    else:
+        return False
+    finally:
         cursor.close()

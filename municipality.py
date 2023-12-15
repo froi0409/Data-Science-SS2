@@ -73,6 +73,7 @@ class Municipality:
         # Remove duplicate registers
         print(f"{Fore.CYAN}Eliminando Registros Duplicados{Fore.RESET}")
         dataframe = dataframe.drop_duplicates()
+        dataframe = dataframe.drop_duplicates(subset='codigo_municipio', keep='first')
 
         print(f"{Fore.CYAN}Eliminando datos irrelevantes para el análisis{Fore.RESET}")
 

@@ -6,10 +6,11 @@ import numpy
 import pandas as pd
 from colorama import init, Fore
 
+from itertools import batched
 from config import get_database_connection, execute_queries, execute_query
 from municipality import Municipality
 from world import World
-from query import insert_country, insert_department, insert_municipality
+from query import insert_country, insert_department, insert_municipality, insert_municipality_total_deaths
 
 
 # init colorama
@@ -56,13 +57,12 @@ def transformation(municipality_data, world_data):
     combined_data['cumulative_cases_world'] = combined_data['cumulative_cases_world'].fillna(0).astype(int)
     combined_data['cumulative_deaths_world'] = combined_data['cumulative_deaths_world'].fillna(0).astype(int)
 
+    combined_data['fecha'] = pd.to_datetime(combined_data['fecha'])
+    combined_data = combined_data.dropna()
+
+    combined_data.to_csv('tranformado.csv', index=False)
+
     return combined_data
-
-def insert_final_data(final_data):
-    print('')
-
-def insert_municipalities(municipality_data):
-    print('')
 
 def insert_countries(world_data):
     countries = world_data[['Country_code', 'Country']]
@@ -130,6 +130,42 @@ def insert_data(municipality_data, world_data, final_data):
     insert_countries(world_data)
     insert_departments_municipalities(municipality_data)
     insert_final_data(final_data)
+
+def insert_final_data(final_data):
+    new_order_columns = ['codigo_municipio', 'fecha', 'casos', 'new_cases_world']
+    data = final_data[new_order_columns]
+    
+    queries = make_md_batches(list(data.itertuples()))
+    insert_to_database(queries)
+
+def insert_to_database(queries):
+    conn = get_database_connection()
+    report = execute_queries(conn, queries)
+    print(f"{Fore.YELLOW}Reporte de Inserción de Bloques{Fore.RESET}")
+    print(f"{Fore.LIGHTGREEN_EX}Bloques Exitosos: {report['commit_cont']}{Fore.RESET}")
+    print(f"{Fore.RED}Bloques Fallidos: {report['rollback_cont']}{Fore.RESET}")
+
+def make_md_batch(registers):
+    query_values = ""
+    
+    for i, row in enumerate(registers):
+        codigo_municipio, fecha, casos, new_cases_world = row.codigo_municipio, row.fecha, row.casos, row.new_cases_world
+        fecha_str = fecha.strftime('%Y-%m-%d')
+        query_values += "({}, '{}', {}, {}),\n".format(codigo_municipio, fecha_str, casos, new_cases_world)
+    return query_values[:-2] + ";\n"
+
+def make_md_batches(registers, batch_size=50):
+    batches = divide_batches(registers, batch_size)
+    queries = []
+    for batch in batches:
+        query = insert_municipality_total_deaths + make_md_batch(batch)
+        queries.append(query)
+    
+    return queries
+
+def divide_batches(list_parameter, n):
+    return list(batched(list_parameter, n))
+
 
 municipality = Municipality()
 world = World()
