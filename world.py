@@ -1,18 +1,35 @@
 import os
 import pandas as pd
+import chardet
 from colorama import init, Fore
 from io import StringIO
 import requests
 init()
 
+year = 2020
+
 def is_positive_integer(value):
     try:
-        return pd.notna(value) and int(value) > 0
+        return pd.notna(value) and int(value) >= 0
     except ValueError:
         return False
     
+def is_valid_alpha(value):
+    # Verifica si el valor contiene únicamente letras y espacios
+    return all(char.isalpha() or char.isspace() for char in value)
+
+def validate_alpha_columns(dataframe):
+    # Aplica la función de validación a las columnas "departamento" y "municipio"
+    condition = dataframe[['Country']].applymap(is_valid_alpha).all(axis=1)
+
+    # Filtra el DataFrame original
+    dataframe = dataframe[condition]
+
+    return dataframe
+
+
 def remove_useless_columns(dataframe):
-    useless_columns = ['Country_code', 'Country', 'WHO_region']
+    useless_columns = ['WHO_region']
     dataframe = dataframe.drop(useless_columns, axis=1)
     return dataframe
 
@@ -24,6 +41,8 @@ def standarize_data(dataframe):
     # validate dates
     valid_formats = pd.to_datetime(dataframe['Date_reported'], errors='coerce', format='%m/%d/%Y', exact=False).notna()
     dataframe = dataframe[valid_formats]
+    dataframe['Date_reported'] = pd.to_datetime(dataframe['Date_reported'], format='%m/%d/%Y')
+    dataframe = dataframe[dataframe['Date_reported'].dt.year == year]
 
     # standarize numeric data
     numeric_columns = ['New_cases', 'Cumulative_cases', 'New_deaths', 'Cumulative_deaths']
@@ -32,6 +51,9 @@ def standarize_data(dataframe):
     # Filter rows where at least one numeric column is not a positive integer
     condition = dataframe[numeric_columns].applymap(is_positive_integer).all(axis=1)
     dataframe = dataframe[condition]
+
+    # standarize alphabetic data
+    # dataframe = validate_alpha_columns(dataframe)
 
     return dataframe
 
@@ -46,9 +68,13 @@ class World:
             response = requests.get(url)
 
             if response.status_code == 200:
-                csv_data = StringIO(response.text)
+                result = chardet.detect(response.content)
+                encoding = result['encoding']
+                
+                text = response.content.decode(encoding)
+                data = StringIO(text)
 
-                dataframe = pd.read_csv(csv_data)
+                dataframe = pd.read_csv(data)
 
                 return dataframe
             else:

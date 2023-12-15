@@ -9,16 +9,25 @@ driver = '{SQL Server}'
 # Cadena de conexión para Windows Authentication
 connection_string = f'DRIVER={driver};SERVER={server};DATABASE={database};Trusted_Connection={trusted_connection}'
 
-# Intenta establecer la conexión
-try:
-    connection = pyodbc.connect(connection_string)
-    print("Conexión exitosa")
+def get_database_connection():
+    try:
+        connection = pyodbc.connect(connection_string)
+        return connection
+    except Exception as e:
+        print(f"Error de conexión: {str(e)}")
+        return None
+    
+def execute_queries(db_conn, queries):
+    for q in queries:
+        execute_query(db_conn, q)
 
-    # Puedes agregar aquí tus operaciones en la base de datos
-
-except Exception as e:
-    print(f"Error de conexión: {str(e)}")
-finally:
-    # Cierra la conexión al finalizar
-    if connection:
-        connection.close()
+def execute_query(db_conn, query):
+    try:
+        cursor = db_conn.cursor()
+        cursor.execute(query)
+        db_conn.commit()
+    except Exception as e:
+        print(f"Ocurrió un error al insertar: {str(e)}")
+        db_conn.rollback()
+    else:
+        cursor.close()
