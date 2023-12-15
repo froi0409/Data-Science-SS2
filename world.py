@@ -39,7 +39,7 @@ def standarize_data(dataframe):
     dataframe['Date_reported'] = dataframe['Date_reported'].str.strip().str.replace('[-. ]', '/', regex=True)
     
     # validate dates
-    valid_formats = pd.to_datetime(dataframe['Date_reported'], errors='coerce', format='%m/%d/%Y', exact=False).notna()
+    valid_formats = pd.to_datetime(dataframe['Date_reported'], errors='coerce', format='%m/%d/%Y').notna()
     dataframe = dataframe[valid_formats]
     dataframe['Date_reported'] = pd.to_datetime(dataframe['Date_reported'], format='%m/%d/%Y')
     dataframe = dataframe[dataframe['Date_reported'].dt.year == year]

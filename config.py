@@ -33,14 +33,22 @@ def execute_queries(db_conn, queries):
     return report
 
 def execute_query(db_conn, query):
-    try:
-        cursor = db_conn.cursor()
-        cursor.execute(query)
-        db_conn.commit()
-        return True
-    except Exception as e:
-        print(f"Ocurrió un error al insertar: {str(e)}")
-        db_conn.rollback()
-        return False
-    finally:
-        cursor.close()
+    retries = 0
+    max_retries = 2
+    while retries <= max_retries:
+        try:
+            cursor = db_conn.cursor()
+            cursor.execute(query)
+            db_conn.commit()
+            return True
+        except Exception as e:
+            print(f"Ocurrió un error al insertar: {str(e)}")
+            db_conn.rollback()
+            retries += 1
+            if retries <= max_retries:
+                print(f"Reintentando ({retries}/{max_retries})...")
+            else:
+                print(f"Se alcanzó el número máximo de reintentos.")
+                return False
+        finally:
+            cursor.close()

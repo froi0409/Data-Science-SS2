@@ -16,27 +16,60 @@ Este proyecto de limpieza y análisis de datos tiene como objetivo procesar info
 
 ## Proceso de Limpieza de Datos
 1. Selección de Archivos:
-Solicita al usuario la ruta del archivo de fallecimientos por municipio y el enlace del archivo de fallecimientos a nivel mundial.
-Carga de Datos:
+Solicita al usuario la ruta del archivo de fallecimientos por municipio y el enlace del archivo de fallecimientos a nivel mundial, los cuales son cargados y procesados en un dataset de pandas
 
-2. Utiliza la biblioteca pandas para cargar los datos desde los archivos proporcionados.
-Limpieza de Datos Mundiales:
+2. Limpieza de Datos Mundiales:
+Cada uno de los dataset es limpiado en funciones personalizadas, ya que cada dataset cuenta con una estructura diferente, dicha limpieza involucra varios filtros
 
 3. Elimina duplicados y registros no relevantes.
 Estandariza campos inválidos y maneja datos faltantes.
-Limpieza de Datos por Municipio:
 
-4. Elimina duplicados y registros no relevantes.
-Estandariza campos inválidos y maneja datos faltantes.
+4. Valida que las fechas contengan el formato correspondiente, además de que los campos numéricos no posean valores negativos o alfabétios
+
+5. Se realiza la transformación en la que el dataset de datos por municipio transforma su estructura de tal forma que sea compatible con la estructura del dataset de los casos de covid mundiales.
+
+6. Después de esto se unen ambos dataset en base a la fecha y posteriormente son ingresados a una base de datos (SQL server) en bloques de 50 inserciones hasta llegar al total de inserciones
 
 ## Explicación del Modelo de Datos
-- Municipio:
--- Datos específicos relacionados con fallecimientos a nivel municipal.
-Campos: 'departamento', 'codigo_departamento', 'municipio', 'codigo_municipio', 'población', y columnas de fechas
+### Modelo de Datos: COVID-19
 
-- Mundial:
--- Datos agregados a nivel mundial.
-Campos: 'Date_reported', 'New_cases', 'Cumulative_cases', 'New_deaths', 'Cumulative_deaths'.
+#### Tabla: COUNTRY
+
+- **code** (PK, varchar(5)) - Código del país.
+- **name** (varchar(100)) - Nombre del país.
+
+#### Tabla: COUNTRY_DEATHS
+
+- **date** (PK, datetime) - Fecha.
+- **country_code** (PK, FK to COUNTRY.code, varchar(5)) - Código del país.
+- **new_cases** (int) - Nuevos casos.
+- **cumulative_cases** (int) - Casos acumulados.
+- **new_deaths** (int) - Nuevas muertes.
+- **cumulative_deaths** (int) - Muertes acumuladas.
+
+#### Tabla: DEPARTMENT
+
+- **code** (PK, varchar(10)) - Código del departamento.
+- **name** (varchar(100)) - Nombre del departamento.
+
+#### Tabla: MUNICIPALITY
+
+- **code** (PK, varchar(10)) - Código del municipio.
+- **name** (varchar(100)) - Nombre del municipio.
+- **department_code** (FK to DEPARTMENT.code, varchar(10)) - Código del departamento.
+- **population** (int) - Población.
+
+#### Tabla: MUNICIPALITY_DEATHS
+
+- **municipality_code** (PK, FK to MUNICIPALITY.code, varchar(10)) - Código del municipio.
+- **date** (PK, datetime) - Fecha.
+- **total_deaths** (int) - Total de muertes.
+- **day_deaths** (int) - Muertes del día en el país.
+
+### Modelo de Datos Imagen
+![Diagrama ER de Covid-data](./data/Diagrama%20ER.png)
+
+
 
 ## Inicialización del Proyecto
 1. **Permitir a Windows Ejecutar el Script:**
