@@ -122,12 +122,37 @@ def insert_municipalities(municipality_data):
     finally:
         conn.close()
 
+def insert_country_deaths(world_data):
+    selected_columns = ['Date_reported', 'New_cases','Cumulative_cases','New_deaths','Cumulative_deaths']
+    world_info = world_data[selected_columns]
+    world_info =  world_info.drop_duplicates(subset=['Date_reported'])
+
+    try:
+        conn = get_database_connection()
+        for index, row in world_info.iterrows():
+            date = row['Date_reported']
+            country_code = 'GT'
+            new_cases = row['New_cases']
+            cumulative_cases = row['Cumulative_cases']
+            new_deaths = row['New_deaths']
+            cumulative_deaths = row['Cumulative_deaths']
+
+            query = f"INSERT INTO COUNTRY_DEATHS (date, country_code, new_cases, cumulative_cases, new_deaths, cumulative_deaths) VALUES ('{date}', '{country_code}', {new_cases}, {cumulative_cases}, {new_deaths}, {cumulative_deaths})"
+            execute_query(conn, query)
+
+    except Exception as e:
+        print("Ocurrió un error al insertar la información de country deaths")
+    finally:
+        conn.close()
+
+
 def insert_departments_municipalities(municipality_data):
     insert_departmens(municipality_data)
     insert_municipalities(municipality_data)
 
 def insert_data(municipality_data, world_data, final_data):
     insert_countries(world_data)
+    insert_country_deaths(world_data)
     insert_departments_municipalities(municipality_data)
     insert_final_data(final_data)
 
